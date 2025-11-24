@@ -156,7 +156,7 @@ from tkinter import filedialog, messagebox
 
 import ttkbootstrap as tb
 
-from excel_handler import ExcelHandler
+from excel_handler import write_data_to_excel
 from gemini_caller import GeminiModel
 
 
@@ -278,8 +278,7 @@ class PDFExtractionApp:
         if not path:
             return
 
-        excel_handler = ExcelHandler()
-        excel_handler.write_data(self.extracted_data, path)
+        write_data_to_excel(self.extracted_data, path)
         messagebox.showinfo("Success", "Excel file saved successfully!")
 
     # ---------------------------

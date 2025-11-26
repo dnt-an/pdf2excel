@@ -191,7 +191,7 @@ def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"
             ws.cell(row=current_row, column=2).style = "normal_style"
 
             # Col 3 (Yêu cầu kỹ thuật): Normal style
-            ws.cell(row=current_row, column=3).style = "normal_style"
+            ws.cell(row=current_row, column=3).style = "unit_style"
 
             # # Col 4 (Khối lượng): Number style (Right-aligned, formatted)
             ws.cell(row=current_row, column=4).style = "number_style"
@@ -206,9 +206,9 @@ def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"
             if column_letter == "B":
                 ws.column_dimensions[column_letter].width = 60.0
             elif column_letter == "C":
-                ws.column_dimensions[column_letter].width = 45.0
+                ws.column_dimensions[column_letter].width = 42.0
             elif column_letter == "D":
-                ws.column_dimensions[column_letter].width = 12.0
+                ws.column_dimensions[column_letter].width = 24.0
             else:
                 length = max(
                     len(str(cell.value)) if cell.value is not None else 0

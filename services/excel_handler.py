@@ -1,110 +1,61 @@
-# from openpyxl import Workbook
-# from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
-# from openpyxl.utils import get_column_letter
-
-
-# def write_data_to_excel(hang_muc_list, output_file="output.xlsx"):
-#     wb = Workbook()
-#     ws = None
-#     sheet_name = None
-
-#     # -------- Create reusable styles -------- #
-#     header_font = Font(bold=True)
-#     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-#     border = Border(
-#         left=Side(style="thin"),
-#         right=Side(style="thin"),
-#         top=Side(style="thin"),
-#         bottom=Side(style="thin"),
-#     )
-
-#     header_fill = PatternFill("solid", fgColor="BDD7EE")
-
-#     header_style = NamedStyle(name="header_style")
-#     header_style.font = header_font
-#     header_style.alignment = center
-#     header_style.border = border
-#     header_style.fill = header_fill
-
-#     normal_style = NamedStyle(name="normal_style")
-#     normal_style.alignment = Alignment(wrap_text=True, vertical="top")
-#     normal_style.border = border
-
-#     if "header_style" not in wb.named_styles:
-#         wb.add_named_style(header_style)
-#     if "normal_style" not in wb.named_styles:
-#         wb.add_named_style(normal_style)
-
-#     # -------- Iterate HangMuc -------- #
-#     for hang_muc in hang_muc_list:
-#         # If has name → new sheet
-#         if hang_muc.ten_hang_muc.strip() != "":
-#             sheet_name = hang_muc.ten_hang_muc[:31]  # Excel sheet name limit
-#             ws = wb.create_sheet(title=sheet_name)
-
-#             # Write section title on top
-#             ws.merge_cells("A1:D1")
-#             ws["A1"].value = hang_muc.ten_hang_muc
-#             ws["A1"].font = Font(bold=True, size=14)
-#             ws["A1"].alignment = center
-
-#             # Write header row
-#             headers = ["STT", "Nội dung công việc", "Đơn vị", "Khối lượng"]
-#             ws.append(headers)
-
-#             for col in range(1, 5):
-#                 ws.cell(row=2, column=col).style = "header_style"
-
-#             start_row = 3
-
-#         # If no name → continues writing into previous sheet
-#         if ws is None:
-#             raise ValueError("First table should have Hang Muc information")
-
-#         # -------- Write rows -------- #
-#         row_index = ws.max_row
-#         if row_index < 3:
-#             row_index = 3
-
-#         stt = 1
-#         for cv in hang_muc.cong_viec:
-#             ws.append([stt, cv.noi_dung_cong_viec, cv.don_vi, cv.khoi_luong])
-#             current_row = ws.max_row
-
-#             # Apply styles to each cell
-#             for col in range(1, 5):
-#                 ws.cell(row=current_row, column=col).style = "normal_style"
-
-#             # Right-align number
-#             ws.cell(row=current_row, column=4).number_format = "#,##0.000"
-#             ws.cell(row=current_row, column=4).alignment = Alignment(horizontal="right")
-
-#             stt += 1
-
-#         # Auto column width
-#         # for col in ["A", "B", "C", "D"]:
-#         #     ws.column_dimensions[col].width = 20
-#         for column_cells in ws.columns:
-#             length = max(
-#                 len(str(cell.value)) if cell.value is not None else 0
-#                 for cell in column_cells
-#             )
-#             column_letter = get_column_letter(column_cells[0].column)
-#             ws.column_dimensions[column_letter].width = length + 2
-
-#     # Remove default empty sheet if still exists
-#     if "Sheet" in wb.sheetnames:
-#         del wb["Sheet"]
-
-#     wb.save(output_file)
-#     print("✔ Exported to", output_file)
-
+from typing import Union
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, NamedStyle, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 # ---------------------------------------------------------------------
+
+
+def vn_string_to_float(vn_string: str) -> Union[float, None]:
+    """
+    Converts a Vietnamese-formatted number string (e.g., "92,064,023" or "5.582,000")
+    to a standard Python float (e.g., 92064.023 or 5582.000).
+
+    In this context, the last comma is treated as the decimal separator,
+    and any preceding commas AND dots are treated as thousands separators which must be removed.
+
+    Args:
+        vn_string (str): The input number string.
+
+    Returns:
+        Union[float, None]: The converted float number, or None if conversion fails.
+    """
+    if not isinstance(vn_string, str):
+        print(f"Warning: Input is not a string: {vn_string}")
+        return None
+
+    # 1. Clean up leading/trailing whitespace
+    cleaned_str = vn_string.strip()
+
+    if not cleaned_str:
+        return 0.0
+
+    try:
+        # A. Split the string from the right (limit=1) to isolate the last comma,
+        # which is assumed to be the decimal separator.
+        parts = cleaned_str.rsplit(",", 1)
+
+        if len(parts) == 2:
+            # If a comma was found (length is 2), proceed with cleaning.
+            # B. Remove all remaining thousands separators (commas AND dots) from the integer part.
+            # FIX: Added .replace(".", "") to handle dot thousands separators.
+            integer_part = parts[0].replace(",", "").replace(".", "")
+            decimal_part = parts[1]
+
+            # C. Join the parts with a standard decimal dot.
+            standard_str = f"{integer_part}.{decimal_part}"
+        else:
+            # If no comma was found (length is 1), the string is already a standard format
+            # or uses a dot as the thousands separator. Remove both separators for a clean integer conversion.
+            standard_str = cleaned_str.replace(".", "").replace(",", "")
+
+        # 2. Convert the resulting standardized string to a float
+        return float(standard_str)
+
+    except ValueError as e:
+        print(f"Error converting string '{vn_string}' to float: {e}")
+        return None
 
 
 def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"):
@@ -207,14 +158,23 @@ def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"
         base_stt = main_item_counter - 1
 
         for i, cv in enumerate(hang_muc.cong_viec):
+            if cv.noi_dung_cong_viec == "TỔNG CỘNG":
+                continue
+
             # Calculate the incremental STT: 1.1, 1.2, 1.3...
-            sub_stt = f"{base_stt}.{cv.stt}"
+            if cv.stt:
+                sub_stt = f"{base_stt}.{cv.stt}"
+                khoi_luong = vn_string_to_float(cv.khoi_luong)
+                quy_dinh = "Theo quy định tại Chương V"
+
+            else:
+                sub_stt, khoi_luong, quy_dinh = "", "", ""
 
             row_data = [
                 sub_stt,
                 cv.noi_dung_cong_viec,
-                "Theo quy định tại Chương V",
-                cv.khoi_luong,
+                quy_dinh,
+                khoi_luong,
                 cv.don_vi,
             ]
             ws.append(row_data)
@@ -246,7 +206,9 @@ def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"
             if column_letter == "B":
                 ws.column_dimensions[column_letter].width = 60.0
             elif column_letter == "C":
-                ws.column_dimensions[column_letter].width = 15.0
+                ws.column_dimensions[column_letter].width = 45.0
+            elif column_letter == "D":
+                ws.column_dimensions[column_letter].width = 12.0
             else:
                 length = max(
                     len(str(cell.value)) if cell.value is not None else 0

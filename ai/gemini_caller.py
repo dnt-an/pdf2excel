@@ -14,7 +14,7 @@ class CongViec(BaseModel):
     stt: str
     noi_dung_cong_viec: str
     don_vi: str
-    khoi_luong: float
+    khoi_luong: str
 
 
 class HangMuc(BaseModel):
@@ -45,15 +45,14 @@ class GeminiModel:
     PROMPT = """
         Task: Extract the BOQ table from the page.
         Rules:
-        - Use numeric types only for quantities. **STRICTLY FOLLOW THE VIETNAMESE/EUROPEAN SEPARATOR FORMAT:**
-            - **COMMA (,) is the DECIMAL separator.** (Ex: 123,45)
-            - **DOT (.) is the THOUSAND separator.** (Ex: 1.234.567)
-            - **CRITICAL EXAMPLE:** the number is **24,000**. This MUST be parsed as the integer twenty four (24), NOT as twenty four thousand (24000).
-        - Report conf[0,1] for each numeric field; set needs_review=true if conf<0.7.
-        - Column 'ĐƠN VỊ' may span multiple row formats. (Ex: 100m3/km, 10 tấn/km 100m cọc, m3 d.dịch, 100m cọc).
-        - Only include rows with an STT value.
-        - If a page has no 'HẠNG MỤC', return an empty string for 'ten_hang_muc'.
-        - If a page has a 'HẠNG MỤC', return its value **without the prefix 'HẠNG MỤC :'** or any colon/label; only return the actual name of the section.
+        - **CRITICAL: For all columns, extract the value AS A STRING ONLY**
+        - **DO NOT convert the format to a standard JSON number (float). Output the raw text value only.**
+        - Example: 
+            - The value '360,000' for KHỐI LƯỢNG must be output as the string "360,000".
+            - The value '1.082,333' for ĐƠN GIÁ must be output as the string "1.082,333".
+        - Extract all row, including rows without "STT" column
+        - **CRITICAL: For the 'ĐƠN VỊ' column, capture the complete unit string, including ALL stacked or multi-line text (e.g., '100m cọc' instead of 'cọc'; 'm3 d.dich' instead of 'd.dich'). If a unit is vertically split, combine all parts into a single string, separated by a space if needed.**
+        - If in a page title has a following format "HẠNG MỤC:...", return its value **without the prefix 'HẠNG MỤC :'** or any colon/label; only return the actual name of the section. If no information about the section, return an empty string for 'ten_hang_muc'.
     """
 
     generation_config = {

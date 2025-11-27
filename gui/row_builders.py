@@ -72,3 +72,9 @@ class RowBuilder:
         ttk.Entry(row, textvariable=self.engine.to_page_var).pack(
             side=LEFT, fill=X, expand=YES, padx=5
         )
+
+        # ttk.Label(row, text="Start counter:", width=8).pack(side=LEFT, padx=(15, 0))
+        # self.engine.counter = ttk.StringVar(value="1")
+        # ttk.Entry(row, textvariable=self.engine.counter).pack(
+        #     side=LEFT, fill=X, expand=YES, padx=5
+        # )

@@ -149,7 +149,7 @@ def write_data_to_excel(hang_muc_list, output_file="output_incremental_stt.xlsx"
 
         if ws is None:
             # Should only happen if hang_muc_list is empty, but we keep the guardrail
-            raise ValueError("First table should have Hang Muc information")
+            raise ValueError('First input page should have "Hang Muc" information')
 
         # -------- Write data rows with incremental STT -------- #
 
